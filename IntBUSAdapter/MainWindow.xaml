@@ -12,7 +12,7 @@
     <Grid  Margin="10">
         <Grid.Background>
             <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                <GradientStop Color="#FFBDAAF1" Offset="0.086"/>
+                <GradientStop Color="#FF98D5FF" Offset="0.086"/>
                 <GradientStop Color="White" Offset="0.769"/>
             </LinearGradientBrush>
         </Grid.Background>
@@ -101,7 +101,12 @@
                     <Label Content="Преамбула IntBUS" MinHeight="20"></Label>
                     <TextBox TextChanged="TextBox_IntBusData_TextChanged"
                          MaxHeight="20"
-                         VerticalAlignment="Top"></TextBox>
+                         VerticalAlignment="Top"
+                         Text="21"></TextBox>
+                    <Label Content="Ожидаемое кол-во байт" MinHeight="20"></Label>
+                    <TextBox Name="SerialTimeouIntBUS" 
+                             Text="7"
+                             TextChanged="SerialTimeouIntBUS_TextChanged"></TextBox>
                 </StackPanel>
 
             </UniformGrid>
