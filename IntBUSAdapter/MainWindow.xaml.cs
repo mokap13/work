@@ -141,6 +141,7 @@ namespace IntBUSAdapter
             string message = BitConverter.ToString(messByte).Replace('-', ' ');
             message = AddTime(message);
 
+            messByte = messByte.Skip(IntBusAddedData.Count).ToArray();
             if (SerialPortModbus != null)
                 if (SerialPortModbus.IsOpen)
                 {

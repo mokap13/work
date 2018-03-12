@@ -20,7 +20,7 @@
             <BindingGroup/>
         </Grid.BindingGroup>
         <Grid.RowDefinitions>
-            <RowDefinition MaxHeight="200" Height="165*"></RowDefinition>
+            <RowDefinition MaxHeight="205" Height="165*"></RowDefinition>
             <RowDefinition Height="134*"></RowDefinition>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -48,7 +48,8 @@
                   Margin="5">
             <UniformGrid Columns="2">
                 <StackPanel HorizontalAlignment="Left" 
-                            MinWidth="90" MaxWidth="110">
+                            MinWidth="90" MaxWidth="110"
+                            Margin="3">
                     <StackPanel IsEnabled="{Binding ElementName=toggleButton_SerialPortOut,Path=IsChecked, Converter={StaticResource inverter}}">
                         <ComboBox ItemsSource="{Binding SerialPortNames}"
                               SelectedIndex="0" 
@@ -95,7 +96,7 @@
                                   Unchecked="ToggleButton_OpenOutPort_Unchecked"/>
 
                 </StackPanel>
-                <StackPanel>
+                <StackPanel Margin="3">
                     <Label Content="---" Name="label_PortState_IntBUS" MinHeight="20"></Label>
 
                     <Label Content="Преамбула IntBUS" MinHeight="20"></Label>
@@ -104,9 +105,10 @@
                          VerticalAlignment="Top"></TextBox>
                     <Label Content="Ожидаемое кол-во байт" MinHeight="20"></Label>
                     <TextBox Name="SerialTimeouIntBUS" 
-                             Text="7"
+                             Text="1"
                              TextChanged="SerialTimeouIntBUS_TextChanged"></TextBox>
-                    <Label Content="Преамбула не входящая в CRC" MinHeight="20"></Label>
+                    <Label Content="Преамбула вне пакета" 
+                           MinHeight="20"></Label>
                     <TextBox Name="Preambula_TextBox" 
                              TextChanged="Preambula_TextChanged"></TextBox>
                 </StackPanel>
@@ -123,11 +125,13 @@
                     <Label Name="label_PortState_Modbus" 
                            Content="---"
                            MinHeight="20"
-                           MaxHeight="30"/>
+                           MaxHeight="30"
+                           Margin="3"/>
 
                 </StackPanel>
                 <StackPanel MinWidth="90" MaxWidth="110"
-                        HorizontalAlignment="Right">
+                            HorizontalAlignment="Right"
+                            Margin="3">
                     <StackPanel IsEnabled="{Binding ElementName=toggleButton_SerialPortIn,Path=IsChecked, Converter={StaticResource inverter}}">
                         <ComboBox ItemsSource="{Binding SerialPortNames}" 
                           SelectedIndex="0" 
