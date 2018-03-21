@@ -138,10 +138,16 @@ namespace IntBUSAdapter
                 return;
             serialPort.Read(messByte, 0, byteRecieved);
             serialPort.DiscardInBuffer();
+
+            List<byte> listBytes = new List<byte>();
+            listBytes.AddRange(messByte);
+            listBytes = listBytes.Skip(IntBusAddedData.Count).ToList();
+            listBytes = listBytes.Take(messByte.Count() - 2).ToList();
+            listBytes.AddRange(ModbusUtility.CalculateCrc(listBytes.ToArray()));
+            messByte = listBytes.ToArray();
+
             string message = BitConverter.ToString(messByte).Replace('-', ' ');
             message = AddTime(message);
-
-            messByte = messByte.Skip(IntBusAddedData.Count).ToArray();
             if (SerialPortModbus != null)
                 if (SerialPortModbus.IsOpen)
                 {
