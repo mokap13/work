@@ -84,6 +84,10 @@ namespace IntBUSAdapter
 
             foreach (string stopBitsName in Enum.GetNames(typeof(StopBits)))
                 StopBites.Add(stopBitsName);
+            Preambula.AddRange(new byte[] { 0xff, 0xff, 0xff });
+            IntBusAddedData.AddRange(new byte[] { 0x41, 0x21 });
+            Preambula_TextBox.Text = "ff ff ff";
+            textBox_IntBusDataAdded.Text = "41 21";
         }
 
         private void SerialDataModbusReceived(object sender, SerialDataReceivedEventArgs e)
@@ -139,14 +143,18 @@ namespace IntBUSAdapter
             serialPort.Read(messByte, 0, byteRecieved);
             serialPort.DiscardInBuffer();
 
+            string message = BitConverter.ToString(messByte).Replace('-', ' ');
+            message = AddTime(message);
+            AddConsoleText(message + "\r", textBox_ConsoleIntBUS, Brushes.LimeGreen);
+
             List<byte> listBytes = new List<byte>();
             listBytes.AddRange(messByte);
             listBytes = listBytes.Skip(IntBusAddedData.Count).ToList();
-            listBytes = listBytes.Take(messByte.Count() - 2).ToList();
+            listBytes = listBytes.Take(listBytes.Count() - 2).ToList();
             listBytes.AddRange(ModbusUtility.CalculateCrc(listBytes.ToArray()));
             messByte = listBytes.ToArray();
 
-            string message = BitConverter.ToString(messByte).Replace('-', ' ');
+            message = BitConverter.ToString(messByte).Replace('-', ' ');
             message = AddTime(message);
             if (SerialPortModbus != null)
                 if (SerialPortModbus.IsOpen)
@@ -154,7 +162,7 @@ namespace IntBUSAdapter
                     SerialPortModbus.Write(messByte, 0, messByte.Length);
                     AddConsoleText(message + "\r", textBox_ConsoleModbus, Brushes.LimeGreen);
                 }
-            AddConsoleText(message + "\r", textBox_ConsoleIntBUS, Brushes.LimeGreen);
+            
         }
         void AddConsoleText(string message, RichTextBox textBox, object color)
         {

@@ -100,7 +100,8 @@
                     <Label Content="---" Name="label_PortState_IntBUS" MinHeight="20"></Label>
 
                     <Label Content="Преамбула IntBUS" MinHeight="20"></Label>
-                    <TextBox TextChanged="TextBox_IntBusData_TextChanged"
+                    <TextBox Name="textBox_IntBusDataAdded" 
+                         TextChanged="TextBox_IntBusData_TextChanged"
                          MaxHeight="20"
                          VerticalAlignment="Top"></TextBox>
                     <Label Content="Ожидаемое кол-во байт" MinHeight="20"></Label>
