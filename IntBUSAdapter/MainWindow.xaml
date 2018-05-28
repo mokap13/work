@@ -34,14 +34,11 @@
                     Margin="5">
 
         </StackPanel>
-        <RichTextBox Name="textBox_ConsoleModbus" 
-                 IsReadOnly="True"
-                 VerticalScrollBarVisibility="Auto" 
-                 Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Background="#FF252526"/>
+
         <RichTextBox Name="textBox_ConsoleIntBUS" 
                  IsReadOnly="True"
                  VerticalScrollBarVisibility="Auto" 
-                 Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Background="#FF252526"/>
+                 Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Background="#FF252526"/>
         <GroupBox Header="IntBUS Port" 
                   BorderThickness="2"
                   Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2"

@@ -39,6 +39,8 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -52,6 +54,19 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="IntbusConfigurator.xaml.cs">
+      <DependentUpon>IntbusConfigurator.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ModbusAddressesManager.cs" />
+    <Compile Include="ModbusRequest.cs" />
+    <Compile Include="ModbusUtility.cs" />
+    <Compile Include="UserControls\ComPortControl.xaml.cs">
+      <DependentUpon>ComPortControl.xaml</DependentUpon>
+    </Compile>
+    <Page Include="IntbusConfigurator.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -60,10 +75,22 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Device.cs" />
+    <Compile Include="IntbusDevice.cs" />
+    <Compile Include="IntbusInterfaces\FM.cs" />
+    <Compile Include="IntbusInterfaces\I2C.cs" />
+    <Compile Include="IntbusInterfaces\IntbusInterface.cs" />
+    <Compile Include="IntbusInterfaces\OWI.cs" />
+    <Compile Include="IntbusInterfaces\SPI.cs" />
+    <Compile Include="IntbusInterfaces\UART0.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="UserControls\ComPortControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
