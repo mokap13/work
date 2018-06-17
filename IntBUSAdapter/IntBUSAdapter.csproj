@@ -57,6 +57,9 @@
     <Compile Include="IntbusConfigurator.xaml.cs">
       <DependentUpon>IntbusConfigurator.xaml</DependentUpon>
     </Compile>
+    <Compile Include="IntbusDevicePropertiesWindow.xaml.cs">
+      <DependentUpon>IntbusDevicePropertiesWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ModbusAddressesManager.cs" />
     <Compile Include="ModbusRequest.cs" />
     <Compile Include="ModbusUtility.cs" />
@@ -64,6 +67,10 @@
       <DependentUpon>ComPortControl.xaml</DependentUpon>
     </Compile>
     <Page Include="IntbusConfigurator.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="IntbusDevicePropertiesWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

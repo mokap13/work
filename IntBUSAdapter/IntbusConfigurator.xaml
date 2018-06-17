@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:IntBUSAdapter"
         mc:Ignorable="d"
-        Title="IntbusConfigurator" Height="342" Width="300" Closing="Window_Closing" Initialized="Window_Initialized">
+        Title="IntbusConfigurator" Height="342" Width="334" Closing="Window_Closing" Initialized="Window_Initialized">
     <Window.CommandBindings>
         <CommandBinding Command="ApplicationCommands.Copy"
                         CanExecute="CommandCopy_CanExecute"
@@ -22,6 +22,9 @@
         <CommandBinding Command="ApplicationCommands.Delete"
                         CanExecute="CommandDelete_CanExecute"
                         Executed="CommandDelete_Executed"/>
+        <CommandBinding Command="ApplicationCommands.Delete"
+                        CanExecute="CommandProperties_CanExecute"
+                        Executed="CommandProperties_Executed"></CommandBinding>
     </Window.CommandBindings>
     <Grid>
         <Grid.RowDefinitions>
@@ -34,7 +37,8 @@
             <ColumnDefinition></ColumnDefinition>
             <ColumnDefinition></ColumnDefinition>
         </Grid.ColumnDefinitions>
-        <TreeView Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Grid.ColumnSpan="2"
+        <TreeView SelectedItemChanged="TreeView_IntbusDevices_SelectedItemChanged"
+                  Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Grid.ColumnSpan="2"
                   x:Name="TreeView_IntbusDevices" ItemsSource="{Binding IntbusDevices}">
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate ItemsSource="{Binding Path=SlaveIntbusDevices}">
@@ -58,7 +62,7 @@
                 </HierarchicalDataTemplate>
              </TreeView.ItemTemplate>
         </TreeView>
-        <StackPanel Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" Margin="5">
+        <StackPanel Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" Margin="5" Width="auto">
             <ComboBox SelectedItem="{Binding IntbusInterface}" ItemsSource="{Binding IntbusInterfaces}">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
@@ -67,10 +71,13 @@
                 </ComboBox.ItemTemplate>
             </ComboBox>
             <Label>Адрес Intbus Устройства</Label>
-            <TextBox x:Name="TextBox_IntbusAddress" PreviewTextInput="TextBox_PreviewTextInput" Text="{Binding IntbusAddress}"/>
+            <TextBox x:Name="TextBox_IntbusAddress" 
+                     PreviewTextInput="TextBox_PreviewTextInput" 
+                     Text="{Binding IntbusAddress}"/>
             <Label>Название устройства</Label>
             <TextBox Text="{Binding IntbusName}"></TextBox>
-            <Button Content="Создать" MinWidth="80" MinHeight="20" Command="ApplicationCommands.New"></Button>
+            <Button Content="Создать" MinWidth="80" MinHeight="20" 
+                    Command="ApplicationCommands.New"></Button>
         </StackPanel>
     </Grid>
 </Window>

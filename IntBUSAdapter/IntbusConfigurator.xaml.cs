@@ -25,6 +25,8 @@ namespace IntBUSAdapter
     public partial class IntbusConfigurator : Window
     {
         public ObservableCollection<IntbusDevice> IntbusDevices { get; set; }
+        public IntbusDevice IntbusDevice { get; set; }
+        
         public IntbusDevice IntbusDeviceCloneBuffer { get; set; }
         public ObservableCollection<IntbusInterface> IntbusInterfaces { get; set; }
         public IntbusInterface IntbusInterface { get; set; }
@@ -35,7 +37,8 @@ namespace IntBUSAdapter
         {
             InitializeComponent();
             this.DataContext = this;
-            
+            IntbusDevices = new ObservableCollection<IntbusDevice>();
+            IntbusDevice = IntbusDevices.FirstOrDefault();
             IntbusInterfaces = new ObservableCollection<IntbusInterface>
             {
                 new UART0(),
@@ -60,10 +63,10 @@ namespace IntBUSAdapter
             };
             C.AddIntbusDevice(B);
             C.AddIntbusDevice(A);
-            //IntbusDevices = new ObservableCollection<IntbusDevice>
-            //{
-            //    C
-            //};
+            IntbusDevices = new ObservableCollection<IntbusDevice>
+            {
+                C
+            };
         }
 
         private void CommandCopy_CanExecute(object sender, CanExecuteRoutedEventArgs e)
@@ -103,7 +106,7 @@ namespace IntBUSAdapter
         {
             IntbusDevice intbusDevice = TreeView_IntbusDevices.SelectedItem as IntbusDevice;
 
-            IntbusDevice copiedIntbusDevice = IntbusDeviceCloneBuffer;
+            IntbusDevice copiedIntbusDevice = IntbusDeviceCloneBuffer.Clone() as IntbusDevice;
             intbusDevice.AddIntbusDevice(copiedIntbusDevice);
             IntbusDeviceCloneBuffer = null;
         }
@@ -128,8 +131,9 @@ namespace IntBUSAdapter
                 IntbusDevice intbusDevice = TreeView_IntbusDevices.SelectedItem as IntbusDevice;
                 intbusDevice.AddIntbusDevice(
                     new IntbusDevice(
-                        IntbusInterface.Clone() as IntbusInterface, 
-                        IntbusAddress) { Name = IntbusName }
+                        IntbusInterface.Clone() as IntbusInterface,
+                        IntbusAddress)
+                    { Name = IntbusName }
                 );
             }
         }
@@ -142,11 +146,44 @@ namespace IntBUSAdapter
 
         private void CommandDelete_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            IntbusDevice intbusDevice = (TreeView_IntbusDevices.SelectedItem as IntbusDevice);
-            intbusDevice.Dispose();
-            //intbusDevice.Dispose();
-            //IntbusDevices.Remove(intbusDevice);
-            //intbusDevice = null;
+            IntbusDevice removingDevice = (TreeView_IntbusDevices.SelectedItem as IntbusDevice);
+
+            if(IntbusDevices.Contains(removingDevice))
+            {
+                IntbusDevices.Remove(removingDevice);
+                return;
+            }
+            foreach (IntbusDevice device in IntbusDevices)
+            {
+                if (TryRemoveRecursive(device, removingDevice))
+                    return;
+            }
+        }
+
+        private bool TryRemoveRecursive(IntbusDevice device, IntbusDevice removingDevice)
+        {
+            if (device.SlaveIntbusDevices.Contains(removingDevice))
+            {
+                device.SlaveIntbusDevices.Remove(removingDevice);
+                return true;
+            }
+            foreach (IntbusDevice dev in device.SlaveIntbusDevices)
+            {
+                if (TryRemoveRecursive(dev, removingDevice) == true)
+                    return true;
+            }
+            return false;
+        }
+
+        private void CommandProperties_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            if (TreeView_IntbusDevices.SelectedItem != null)
+                e.CanExecute = true;
+        }
+
+        private void CommandProperties_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -181,5 +218,12 @@ namespace IntBUSAdapter
 
         private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e) =>
             e.Handled = !e.Text.Any(x => Char.IsDigit(x) || ':'.Equals(x));
+
+        private void TreeView_IntbusDevices_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            IntbusDevice = e.NewValue as IntbusDevice;
+        }
+
+
     }
 }
