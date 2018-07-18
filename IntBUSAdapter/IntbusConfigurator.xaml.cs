@@ -16,6 +16,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Drawing;
 using System.Windows.Forms;
+using System.ComponentModel;
 
 namespace IntBUSAdapter
 {
@@ -26,13 +27,18 @@ namespace IntBUSAdapter
     {
         public ObservableCollection<IntbusDevice> IntbusDevices { get; set; }
         public IntbusDevice IntbusDevice { get; set; }
-        
         public IntbusDevice IntbusDeviceCloneBuffer { get; set; }
         public ObservableCollection<IntbusInterface> IntbusInterfaces { get; set; }
         public IntbusInterface IntbusInterface { get; set; }
         public string IntbusName { get; set; }
-
+        public int ModbusAddress { get; set; }
         public int IntbusAddress { get; set; }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            e.Cancel = true;
+            this.Visibility = Visibility.Hidden;
+        }
         public IntbusConfigurator()
         {
             InitializeComponent();
@@ -52,21 +58,30 @@ namespace IntBUSAdapter
             {
                 Name = "Датчик давления"
             };
-            IntbusDevice B = new IntbusDevice(new SPI(), 1)
+            IntbusDevice B = new IntbusDevice(new SPI(), 26)
             {
                 Name = "БП"
             };
             B.AddIntbusDevice(A);
-            IntbusDevice C = new IntbusDevice(new UART0(), 1)
+            IntbusDevice C = new IntbusDevice(new FM(), 1)
             {
-                Name = "О-модем"
+                Name = "О-модем",
+                PrefixBytes = { 0xFF, 0xFF}
+            };
+            IntbusDevice D = new IntbusDevice(new UART0(), 1)
+            {
+                Name = "Клапан"
             };
             C.AddIntbusDevice(B);
             C.AddIntbusDevice(A);
+            C.AddIntbusDevice(D);
             IntbusDevices = new ObservableCollection<IntbusDevice>
             {
                 C
             };
+            C.SlaveIntbusDevices.First(x => x.Name == "Датчик давления").ModbusDeviceAddress = 2;
+            C.SlaveIntbusDevices.First(x => x.Name == "Клапан").ModbusDeviceAddress = 1;
+            C.ModbusDeviceAddress = 3;
         }
 
         private void CommandCopy_CanExecute(object sender, CanExecuteRoutedEventArgs e)
@@ -216,14 +231,18 @@ namespace IntBUSAdapter
             }
         }
 
-        private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e) =>
-            e.Handled = !e.Text.Any(x => Char.IsDigit(x) || ':'.Equals(x));
-
         private void TreeView_IntbusDevices_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             IntbusDevice = e.NewValue as IntbusDevice;
+            TextBox_IntbusAddress.Text = IntbusDevice.Address.ToString();
         }
 
-
+        private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e) =>
+            e.Handled = !e.Text.Any(x => Char.IsDigit(x) || ':'.Equals(x));
+        
+        private void TextBox_PreviewHexInput(object sender, TextCompositionEventArgs e) =>
+            e.Handled = !e.Text.Any(x => (x >= '0' && x <= '9') ||
+                                        (x >= 'a' && x <= 'f') ||
+                                        (x >= 'A' && x <= 'F'));
     }
 }

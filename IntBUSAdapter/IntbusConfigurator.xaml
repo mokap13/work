@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:IntBUSAdapter"
         mc:Ignorable="d"
-        Title="IntbusConfigurator" Height="342" Width="334" Closing="Window_Closing" Initialized="Window_Initialized">
+        Title="IntbusConfigurator" Height="352" Width="464" Closing="Window_Closing" Initialized="Window_Initialized">
     <Window.CommandBindings>
         <CommandBinding Command="ApplicationCommands.Copy"
                         CanExecute="CommandCopy_CanExecute"
@@ -62,7 +62,10 @@
                 </HierarchicalDataTemplate>
              </TreeView.ItemTemplate>
         </TreeView>
-        <StackPanel Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" Margin="5" Width="auto">
+      
+        <StackPanel Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" Grid.ColumnSpan="2"
+                     Margin="5" MaxWidth="145">
+
             <ComboBox SelectedItem="{Binding IntbusInterface}" ItemsSource="{Binding IntbusInterfaces}">
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
@@ -70,14 +73,25 @@
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
             </ComboBox>
-            <Label>Адрес Intbus Устройства</Label>
-            <TextBox x:Name="TextBox_IntbusAddress" 
-                     PreviewTextInput="TextBox_PreviewTextInput" 
-                     Text="{Binding IntbusAddress}"/>
             <Label>Название устройства</Label>
             <TextBox Text="{Binding IntbusName}"></TextBox>
-            <Button Content="Создать" MinWidth="80" MinHeight="20" 
-                    Command="ApplicationCommands.New"></Button>
+            <Label>Адрес Intbus</Label>
+            <TextBox x:Name="TextBox_IntbusAddress" 
+                                         PreviewTextInput="TextBox_PreviewTextInput" 
+                                         Text="{Binding IntbusAddress}"/>
+            <Label>Адрес Modbus</Label>
+            <TextBox PreviewTextInput="TextBox_PreviewTextInput" 
+                                        Text="{Binding ModbusAddress}"></TextBox>
+            <Label>Префикс посылки(hex)</Label>
+            <TextBox PreviewTextInput="TextBox_PreviewHexInput" 
+                                        Text="{Binding ModbusAddress}"></TextBox>
+            <Label>Постфикс посылки(hex)</Label>
+            <TextBox PreviewTextInput="TextBox_PreviewHexInput" 
+                                        Text="{Binding ModbusAddress}"></TextBox>
+            <Button Content="Добавить" MinWidth="80" MinHeight="20" 
+                                        Command="ApplicationCommands.New"></Button>
+            <Button Content="Изменить" MinWidth="80" MinHeight="20" 
+                                        Command="ApplicationCommands.New"></Button>
         </StackPanel>
     </Grid>
 </Window>

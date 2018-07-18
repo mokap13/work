@@ -10,12 +10,28 @@ using System.Windows.Input;
 namespace IntBUSAdapter
 {
     [Serializable]
-    public class IntbusDevice: ICloneable
+    public class IntbusDevice : ICloneable, INotifyPropertyChanged
     {
         private string name;
-        private int address;
-        private IntbusInterface IntbusInterface;
+        //private int address;
+        //private IntbusInterface intbusInterface;
         private int modbusAddress;
+
+        private int address;
+
+        public int Address
+        {
+            get { return address; }
+            set { address = value; }
+        }
+        private IntbusInterface intbusInterface;
+
+        public IntbusInterface IntbusInterface
+        {
+            get { return intbusInterface; }
+            set { intbusInterface = value; }
+        }
+
 
         public ObservableCollection<IntbusDevice> SlaveIntbusDevices { get; set; }
         public IntbusDevice MasterIntbusDevice { get; set; }
@@ -24,7 +40,14 @@ namespace IntBUSAdapter
         public byte AddressWithInterface => (byte)(address | (this.IntbusInterface.Number << 5));
 
         public string IntbusInterfaceName => IntbusInterface.Name;
-        public static Dictionary<int, IntbusDevice> ModbusDeviceAddresses { get; }
+        public static Dictionary<int, IntbusDevice> modbusDeviceAddresses;
+        public static Dictionary<int, IntbusDevice> ModbusDeviceAddresses
+        {
+            get
+            {
+                return modbusDeviceAddresses;
+            }
+        }
         public int ModbusDeviceAddress
         {
             get
@@ -35,10 +58,13 @@ namespace IntBUSAdapter
             {
                 if (value < 248 && value > 0)
                 {
-                    if(!ModbusDeviceAddresses.ContainsKey(value))
+                    int temp = value;
+                    if (ModbusDeviceAddresses == null)
+                        modbusDeviceAddresses = new Dictionary<int, IntbusDevice>();
+                    if (!ModbusDeviceAddresses.ContainsKey(temp))
                     {
-                        modbusAddress = value;
-                        ModbusDeviceAddresses.Add(value, this);
+                        modbusAddress = temp;
+                        ModbusDeviceAddresses.Add(temp, this);
                     }
                     else
                     {
@@ -51,7 +77,7 @@ namespace IntBUSAdapter
                 }
             }
         }
-        
+
         public void AddIntbusDevice(IntbusDevice intbusDevice)
         {
             IntbusDevice clonedDevice = intbusDevice.Clone() as IntbusDevice;
@@ -64,14 +90,14 @@ namespace IntBUSAdapter
             do
             {
                 modbusFrame.Insert(0, intbusDevice.AddressWithInterface);
+                modbusFrame.InsertRange(0, intbusDevice.PrefixBytes);
+                modbusFrame.AddRange(intbusDevice.PostfixBytes);
                 intbusDevice = intbusDevice.MasterIntbusDevice;
             } while (intbusDevice != null);
             modbusFrame.RemoveRange(modbusFrame.Count - 2, 2);
             byte[] crc = ModbusUtility.CalculateCrc(modbusFrame.ToArray());
             modbusFrame.AddRange(crc.ToList());
 
-            modbusFrame.InsertRange(0, this.PrefixBytes);
-            modbusFrame.AddRange(this.PostfixBytes);
             return modbusFrame;
         }
 
@@ -79,7 +105,8 @@ namespace IntBUSAdapter
         {
             IntbusDevice intbusDevice = new IntbusDevice(this.IntbusInterface, this.address)
             {
-                Name = this.name
+                Name = this.name,
+                MasterIntbusDevice = this.MasterIntbusDevice,
             };
             foreach (var slaveDevice in this.SlaveIntbusDevices)
             {
@@ -106,5 +133,10 @@ namespace IntBUSAdapter
             PrefixBytes = new List<byte>();
             PostfixBytes = new List<byte>();
         }
+
+        [field: NonSerialized]
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void OnPropertyRaised(string propertyname) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyname));
     }
 }

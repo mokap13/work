@@ -54,12 +54,17 @@ namespace IntBUSAdapter
         public ObservableCollection<string> SerialPortNames { get; set; }
         public List<byte> Preambula { get; set; }
         public List<byte> IntBusAddedData { get; set; }
+        private IntbusDevice rootIntbusDevice;
+        IntbusConfigurator intbusConfigurator;
         public MainWindow()
         {
             InitializeComponent();
             this.DataContext = this;
-            IntbusConfigurator intbusConfigurator = new IntbusConfigurator();
-            intbusConfigurator.Show();
+            intbusConfigurator = new IntbusConfigurator();
+            //intbusConfigurator.Owner = this.
+            //this.AddChild(intbusConfigurator);
+            //intbusConfigurator.Show();
+            rootIntbusDevice = intbusConfigurator.IntbusDevice;
 
             SerialPortModbus = new SerialPort();
             SerialPortModbus.DataReceived += new SerialDataReceivedEventHandler(SerialDataModbusReceived);
@@ -86,35 +91,43 @@ namespace IntBUSAdapter
 
             foreach (string stopBitsName in Enum.GetNames(typeof(StopBits)))
                 StopBites.Add(stopBitsName);
-            Preambula.AddRange(new byte[] { 0xff, 0xff, 0xff });
-            IntBusAddedData.AddRange(new byte[] { 0x41, 0x21 });
-            Preambula_TextBox.Text = "ff ff ff";
-            textBox_IntBusDataAdded.Text = "41 21";
+            //Preambula.AddRange(new byte[] { 0xff, 0xff, 0xff });
+            //IntBusAddedData.AddRange(new byte[] { 0x41, 0x21 });
+            //Preambula_TextBox.Text = "ff ff ff";
+            //textBox_IntBusDataAdded.Text = "41 21";
         }
 
         private void SerialDataModbusReceived(object sender, SerialDataReceivedEventArgs e)
         {
             int byteRecieved = (sender as SerialPort).BytesToRead;
-            byte[] messByte = new byte[byteRecieved];
-            (sender as SerialPort).Read(messByte, 0, byteRecieved);
+            byte[] receivedBytes = new byte[byteRecieved];
+            (sender as SerialPort).Read(receivedBytes, 0, byteRecieved);
 
+            int mbAddress = receivedBytes.First();
+            IntbusDevice device;
+            if (IntbusDevice.ModbusDeviceAddresses.ContainsKey(mbAddress) == true)
+                device = IntbusDevice.ModbusDeviceAddresses[mbAddress];
+            else
+                return;
             string message = null;
-            for (int i = 0; i < messByte.Length; i++)
-                message += String.Format("{0:X2} ", messByte[i]);
-            message = AddTime(message);
+
+            //for (int i = 0; i < receivedBytes.Length; i++)
+            //    message += String.Format("{0:X2} ", receivedBytes[i]);
+            //message = AddTime(message);
 
             List<byte> listBytes = new List<byte>();
-            listBytes.AddRange(messByte);
+            listBytes.AddRange(receivedBytes);
 
             /////*******************//////////*******************/////
-            for (int i = 0; i < IntBusAddedData.Count; i++)
-            {
-                listBytes.Insert(0, IntBusAddedData[i]);
-                listBytes.RemoveRange(listBytes.Count - 2, 2);
-                listBytes.AddRange(ModbusUtility.CalculateCrc(listBytes.ToArray()));
-            }
+            //for (int i = 0; i < IntBusAddedData.Count; i++)
+            //{
+            //    listBytes.Insert(0, IntBusAddedData[i]);
+            //    listBytes.RemoveRange(listBytes.Count - 2, 2);
+            //    listBytes.AddRange(ModbusUtility.CalculateCrc(listBytes.ToArray()));
+            //}
+            listBytes = device.ConvertToIntbusFrame(listBytes);
 
-            listBytes.InsertRange(0, Preambula);
+            //listBytes.InsertRange(0, Preambula);
 
             if (SerialPortIntBUS != null)
                 if (SerialPortIntBUS.IsOpen)
@@ -123,8 +136,8 @@ namespace IntBUSAdapter
                     for (int i = 0; i < listBytes.Count; i++)
                         message += String.Format("{0:X2} ", listBytes[i]);
                     /////////////////////////////////
-                    messByte = listBytes.ToArray();
-                    SerialPortIntBUS.Write(messByte, 0, messByte.Length);
+                    receivedBytes = listBytes.ToArray();
+                    SerialPortIntBUS.Write(receivedBytes, 0, receivedBytes.Length);
                     message = AddTime(message);
                     AddConsoleText(message + "\r", textBox_ConsoleIntBUS, Brushes.NavajoWhite);
                 }
@@ -138,29 +151,29 @@ namespace IntBUSAdapter
         {
             SerialPort serialPort = (SerialPort)sender;
             int byteRecieved = serialPort.BytesToRead;
-            byte[] messByte = new byte[byteRecieved]; ;
-            if (messByte.Length < expectByteCount)
+            byte[] responseBytes = new byte[byteRecieved]; ;
+            if (responseBytes.Length < expectByteCount)
                 return;
-            serialPort.Read(messByte, 0, byteRecieved);
+            serialPort.Read(responseBytes, 0, byteRecieved);
             serialPort.DiscardInBuffer();
 
-            string message = BitConverter.ToString(messByte).Replace('-', ' ');
+            string message = BitConverter.ToString(responseBytes).Replace('-', ' ');
             message = AddTime(message);
             AddConsoleText(message + "\r", textBox_ConsoleIntBUS, Brushes.LimeGreen);
 
             List<byte> listBytes = new List<byte>();
-            listBytes.AddRange(messByte);
-            listBytes = listBytes.Skip(IntBusAddedData.Count).ToList();
+            listBytes.AddRange(responseBytes);
+            listBytes = listBytes.Skip(2).ToList();//TODO переделать
             listBytes = listBytes.Take(listBytes.Count() - 2).ToList();
             listBytes.AddRange(ModbusUtility.CalculateCrc(listBytes.ToArray()));
-            messByte = listBytes.ToArray();
+            responseBytes = listBytes.ToArray();
 
-            message = BitConverter.ToString(messByte).Replace('-', ' ');
+            message = BitConverter.ToString(responseBytes).Replace('-', ' ');
             message = AddTime(message);
             if (SerialPortModbus != null)
                 if (SerialPortModbus.IsOpen)
                 {
-                    SerialPortModbus.Write(messByte, 0, messByte.Length);
+                    SerialPortModbus.Write(responseBytes, 0, responseBytes.Length);
                 }
             
         }
@@ -430,6 +443,11 @@ namespace IntBUSAdapter
             string value = (sender as TextBox).Text;
             int.TryParse(value, out int ivalue);
             expectByteCount = ivalue;
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            intbusConfigurator.Show();
         }
     }
 }
