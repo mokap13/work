@@ -32,7 +32,6 @@ namespace IntBUSAdapter
             set { intbusInterface = value; }
         }
 
-
         public ObservableCollection<IntbusDevice> SlaveIntbusDevices { get; set; }
         public IntbusDevice MasterIntbusDevice { get; set; }
         public List<byte> PrefixBytes { get; set; }

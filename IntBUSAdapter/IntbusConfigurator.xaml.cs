@@ -36,8 +36,18 @@ namespace IntBUSAdapter
 
         protected override void OnClosing(CancelEventArgs e)
         {
-            e.Cancel = true;
             this.Visibility = Visibility.Hidden;
+        }
+        //protected override void OnClosing(CancelEventArgs e)
+        //{
+        //    e.Cancel = true;
+        //    this.Visibility = Visibility.Hidden;
+        //}
+
+        public void Close(CancelEventArgs e)
+        {
+            e.Cancel = false;
+            base.OnClosing(e);
         }
         public IntbusConfigurator()
         {
@@ -65,8 +75,7 @@ namespace IntBUSAdapter
             B.AddIntbusDevice(A);
             IntbusDevice C = new IntbusDevice(new FM(), 1)
             {
-                Name = "О-модем",
-                PrefixBytes = { 0xFF, 0xFF}
+                Name = "О-модем"
             };
             IntbusDevice D = new IntbusDevice(new UART0(), 1)
             {
@@ -200,8 +209,7 @@ namespace IntBUSAdapter
         {
             
         }
-
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        protected override void OnClosed(EventArgs e)
         {
             // создаем объект BinaryFormatter
             BinaryFormatter formatter = new BinaryFormatter();
@@ -210,7 +218,18 @@ namespace IntBUSAdapter
             {
                 formatter.Serialize(fs, IntbusDevices);
             }
+            base.OnClosed(e);
         }
+        //private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        //{
+        //    // создаем объект BinaryFormatter
+        //    BinaryFormatter formatter = new BinaryFormatter();
+        //    // получаем поток, куда будем записывать сериализованный объект
+        //    using (FileStream fs = new FileStream("deviceConfig.dat", FileMode.OpenOrCreate))
+        //    {
+        //        formatter.Serialize(fs, IntbusDevices);
+        //    }
+        //}
 
         private void Window_Initialized(object sender, EventArgs e)
         {

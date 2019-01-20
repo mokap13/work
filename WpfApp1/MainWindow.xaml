@@ -1,0 +1,54 @@
+﻿<Window x:Class="WpfApp1.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WpfApp1"
+        mc:Ignorable="d"
+        DataContext="{StaticResource Locator}"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48*"></RowDefinition>
+            <RowDefinition Height="371*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0"  >
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Октрыть порт Modbus" 
+                        Command="{Binding Path=Main.OpenMbPortCommand}"></Button>
+                <Button Content="Октрыть порт Intbus"
+                        Command="{Binding Path=Main.OpenIntPortCommand}"></Button>
+                <Button Content="Закрыть порты"
+                        Command="{Binding Path=Main.ClosePortsCommand}"></Button>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Таймаут ответа, мс"></Label>
+                <TextBox Text="{Binding Path=Main.ResponseTimeout, UpdateSourceTrigger=PropertyChanged}" 
+                         MinWidth="50"></TextBox>
+            </StackPanel>
+            
+        </StackPanel>
+        <!--<ScrollViewer Grid.Row="1">-->
+        <TextBox Grid.Row="1"
+                   TextWrapping="Wrap"
+                   Foreground="LightCyan"
+                   Text="{Binding Path=Main.Log}" 
+                   Background="#FF252526" 
+                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                   ScrollViewer.VerticalScrollBarVisibility="Auto"
+                   ScrollViewer.CanContentScroll="True"
+                   TextChanged="TextBox_TextChanged"
+                 IsReadOnly="True">
+            </TextBox>
+        <!--</ScrollViewer>-->
+            
+        
+
+
+        <!--<RichTextBox 
+                 IsReadOnly="True"
+                 Document="{Binding Path=Main.Log}"
+                 VerticalScrollBarVisibility="Auto" 
+                 Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Background="#FF252526"/>-->
+    </Grid>
+</Window>

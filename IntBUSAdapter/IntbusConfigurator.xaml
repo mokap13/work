@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:IntBUSAdapter"
         mc:Ignorable="d"
-        Title="IntbusConfigurator" Height="352" Width="464" Closing="Window_Closing" Initialized="Window_Initialized">
+        Title="IntbusConfigurator" Height="352" Width="464" Initialized="Window_Initialized">
     <Window.CommandBindings>
         <CommandBinding Command="ApplicationCommands.Copy"
                         CanExecute="CommandCopy_CanExecute"

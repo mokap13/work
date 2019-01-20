@@ -163,8 +163,8 @@
                   Grid.Column="2" Grid.Row="0" Grid.ColumnSpan="1"
                   Margin="5">
             <StackPanel Margin="5">
-            <Button MaxWidth="100" Margin="5" Content="Конфигурация" Click="Button_Click" ></Button>
-                
+                <Button MaxWidth="100" Margin="5" Content="Конфигурация" Click="Button_Click" ></Button>
+                <TextBox TextChanged="SerialTimeouIntBUS_TextChanged"></TextBox>
             </StackPanel>
         </GroupBox>
     </Grid>

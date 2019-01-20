@@ -12,6 +12,8 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
 using System.Threading;
+using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace IntBUSAdapter
 {
@@ -38,11 +40,21 @@ namespace IntBUSAdapter
         #endregion
     }
 
+    
     /// <summary>
     /// Логика взаимодействия для MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            e.Cancel = false;
+            //this.intbusConfigurator.Close();
+            this.rootIntbusDevice = null;
+            SerialPortModbus.DataReceived -= new SerialDataReceivedEventHandler(SerialDataModbusReceived);
+            this.intbusConfigurator.Close(e);
+            base.OnClosing(e);
+        }
         private int expectByteCount;
 
         public SerialPort SerialPortModbus { get; set; }
@@ -56,21 +68,20 @@ namespace IntBUSAdapter
         public List<byte> IntBusAddedData { get; set; }
         private IntbusDevice rootIntbusDevice;
         IntbusConfigurator intbusConfigurator;
+
+        private int responseTimeOut = 100; 
+
         public MainWindow()
         {
             InitializeComponent();
             this.DataContext = this;
             intbusConfigurator = new IntbusConfigurator();
-            //intbusConfigurator.Owner = this.
-            //this.AddChild(intbusConfigurator);
-            //intbusConfigurator.Show();
             rootIntbusDevice = intbusConfigurator.IntbusDevice;
 
             SerialPortModbus = new SerialPort();
             SerialPortModbus.DataReceived += new SerialDataReceivedEventHandler(SerialDataModbusReceived);
             SerialPortIntBUS = new SerialPort();
-            //SerialPortIntBUS.ReadTimeout = 5;
-            SerialPortIntBUS.DataReceived += new SerialDataReceivedEventHandler(SerialDataIntBUSResponse);
+
             IntBusAddedData = new List<byte>();
             Preambula = new List<byte>();
             SerialPortNames = new ObservableCollection<string>();
@@ -91,10 +102,6 @@ namespace IntBUSAdapter
 
             foreach (string stopBitsName in Enum.GetNames(typeof(StopBits)))
                 StopBites.Add(stopBitsName);
-            //Preambula.AddRange(new byte[] { 0xff, 0xff, 0xff });
-            //IntBusAddedData.AddRange(new byte[] { 0x41, 0x21 });
-            //Preambula_TextBox.Text = "ff ff ff";
-            //textBox_IntBusDataAdded.Text = "41 21";
         }
 
         private void SerialDataModbusReceived(object sender, SerialDataReceivedEventArgs e)
@@ -111,23 +118,11 @@ namespace IntBUSAdapter
                 return;
             string message = null;
 
-            //for (int i = 0; i < receivedBytes.Length; i++)
-            //    message += String.Format("{0:X2} ", receivedBytes[i]);
-            //message = AddTime(message);
 
             List<byte> listBytes = new List<byte>();
             listBytes.AddRange(receivedBytes);
 
-            /////*******************//////////*******************/////
-            //for (int i = 0; i < IntBusAddedData.Count; i++)
-            //{
-            //    listBytes.Insert(0, IntBusAddedData[i]);
-            //    listBytes.RemoveRange(listBytes.Count - 2, 2);
-            //    listBytes.AddRange(ModbusUtility.CalculateCrc(listBytes.ToArray()));
-            //}
             listBytes = device.ConvertToIntbusFrame(listBytes);
-
-            //listBytes.InsertRange(0, Preambula);
 
             if (SerialPortIntBUS != null)
                 if (SerialPortIntBUS.IsOpen)
@@ -137,7 +132,15 @@ namespace IntBUSAdapter
                         message += String.Format("{0:X2} ", listBytes[i]);
                     /////////////////////////////////
                     receivedBytes = listBytes.ToArray();
+                    SerialPortIntBUS.DiscardOutBuffer();
+                    SerialPortIntBUS.DiscardInBuffer();
                     SerialPortIntBUS.Write(receivedBytes, 0, receivedBytes.Length);
+                    
+                    Task.Factory.StartNew(() =>
+                    {
+                        Thread.Sleep(responseTimeOut);
+                        SerialDataIntBUSResponse();
+                    });
                     message = AddTime(message);
                     AddConsoleText(message + "\r", textBox_ConsoleIntBUS, Brushes.NavajoWhite);
                 }
@@ -147,15 +150,15 @@ namespace IntBUSAdapter
         {
             return str.Insert(0, DateTime.Now.ToString("HH:mm:ss.fff") + "    ");
         }
-        private void SerialDataIntBUSResponse(object sender, SerialDataReceivedEventArgs e)
+
+        private void SerialDataIntBUSResponse()
         {
-            SerialPort serialPort = (SerialPort)sender;
-            int byteRecieved = serialPort.BytesToRead;
-            byte[] responseBytes = new byte[byteRecieved]; ;
-            if (responseBytes.Length < expectByteCount)
+            int byteRecieved = SerialPortIntBUS.BytesToRead;
+            byte[] responseBytes = new byte[byteRecieved];
+            if (responseBytes.Length == 0)
                 return;
-            serialPort.Read(responseBytes, 0, byteRecieved);
-            serialPort.DiscardInBuffer();
+            SerialPortIntBUS.Read(responseBytes, 0, byteRecieved);
+            SerialPortIntBUS.DiscardInBuffer();
 
             string message = BitConverter.ToString(responseBytes).Replace('-', ' ');
             message = AddTime(message);
@@ -428,21 +431,12 @@ namespace IntBUSAdapter
         }
         #endregion
 
-        public static string ByteArrayToString(byte[] ba)
-        {
-            StringBuilder hex = new StringBuilder(ba.Length * 2);
-            foreach (byte b in ba)
-            {
-                hex.AppendFormat("{0:x2}", b);
-            }
-            return hex.ToString();
-        }
 
         private void SerialTimeouIntBUS_TextChanged(object sender, TextChangedEventArgs e)
         {
             string value = (sender as TextBox).Text;
             int.TryParse(value, out int ivalue);
-            expectByteCount = ivalue;
+            responseTimeOut = ivalue;
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
