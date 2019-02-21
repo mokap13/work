@@ -61,5 +61,13 @@ namespace WpfApp1.Helpers
 
             return BitConverter.GetBytes(crc);
         }
+
+        public static bool IsValidCrc(IEnumerable<byte> buffer)
+        {
+            byte[] actualCrc = buffer.Skip(buffer.Count() - 2).ToArray();
+            byte[] expectedCrc = ModbusUtility.CalculateCrc(buffer.Take(buffer.Count() - 2).ToArray());
+
+            return actualCrc[0] == expectedCrc[0] && actualCrc[1] == expectedCrc[1];
+        }
     }
 }

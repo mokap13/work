@@ -17,7 +17,7 @@ using System.Windows.Input;
 
 namespace WpfApp1.ViewModel
 {
-    public class MainViewModel : ViewModelBase
+    public class MainViewModel : ViewModelBase, IDisposable
     {
         private Dictionary<int, IntbusDevice> modbusAddressDictionary = new Dictionary<int, IntbusDevice>();
         private IntbusDevice currentDevice;
@@ -38,7 +38,7 @@ namespace WpfApp1.ViewModel
             {
 
                 JObject jObj = JObject.Parse(File.ReadAllText(@"./intbus_device.json"));
-                this.intbusDevices = jObj["intbusDevice"].ToObject<List<IntbusDevice>>();
+                this.intbusDevices = jObj["intbusDevices"].ToObject<List<IntbusDevice>>();
                 this.intbusDevices.ForEach(d => d.InitializeParents());
 
                 foreach (IntbusDevice device in this.intbusDevices)
@@ -52,9 +52,9 @@ namespace WpfApp1.ViewModel
 
                 this.WriteLog("Привязка intbus устройсв к модбас адоесам");
                 foreach (var pair in this.modbusAddressDictionary)
-                {
+                {   
                     this.WriteLog($"(Device: {pair.Value.Name})  " +
-                        $"(Address: {pair.Value.Address})  (Interface: {pair.Value.Interface})  " +
+                        $"(Address: {pair.Value.IntbusAddress})  (Interface: {pair.Value.Interface})  " +
                         $"(Modbus address: {pair.Key} )");
                 }     
                 
@@ -78,7 +78,7 @@ namespace WpfApp1.ViewModel
             this.IntPort.Read(responseBytes, 0, byteRecieved);
             this.intbusRecievedBuffer.AddRange(responseBytes);
 
-            if (IsValidCrc(this.intbusRecievedBuffer))
+            if (ModbusUtility.IsValidCrc(this.intbusRecievedBuffer))
             {
                 cancelTimeoutToken.Cancel();
                 this.timeoutTask.Wait();
@@ -87,23 +87,31 @@ namespace WpfApp1.ViewModel
                 this.timeoutTaskToken = cancelTimeoutToken.Token;
 
                 IEnumerable<byte> expectedPreambule = this.currentDevice.CalculatePreambule();
-                IEnumerable<byte> actualPreambul = this.intbusRecievedBuffer.Take(expectedPreambule.Count());
-                if (expectedPreambule.Zip(actualPreambul,(f,s) => new { f, s }).Any(p => p.f != p.s))
+                IEnumerable<byte> actualPreambule = this.intbusRecievedBuffer.Take(expectedPreambule.Count());
+
+                if (expectedPreambule.Zip(actualPreambule,(f,s) => new { f, s }).Any(p => p.f != p.s))
                 {
                     this.SerialDataIntBUSResponse("Preambule ERROR");
+                    return;
                 }
-                else
+                
+                if(this.intbusRecievedBuffer.Skip(expectedPreambule.Count()).First() != 
+                    this.currentDevice.ModbusAddress)
                 {
-                    var receivedMbFrame = this.intbusRecievedBuffer
-                        .Take(this.intbusRecievedBuffer.Count - 2)
-                        .Skip(expectedPreambule.Count());
-                    var crc = ModbusUtility.CalculateCrc(receivedMbFrame.ToArray());
-                    this.intbusRecievedBuffer = receivedMbFrame
-                        .ToList();
-                    this.intbusRecievedBuffer.AddRange(crc);
-
-                    this.SerialDataIntBUSResponse("");
+                    this.SerialDataIntBUSResponse("ModbusAddress ERROR");
+                    return;
                 }
+
+                
+                var receivedMbFrame = this.intbusRecievedBuffer
+                    .Take(this.intbusRecievedBuffer.Count - 2)
+                    .Skip(expectedPreambule.Count());
+                var crc = ModbusUtility.CalculateCrc(receivedMbFrame.ToArray());
+                this.intbusRecievedBuffer = receivedMbFrame
+                    .ToList();
+                this.intbusRecievedBuffer.AddRange(crc);
+
+                this.SerialDataIntBUSResponse("");
             }
         }
 
@@ -157,9 +165,18 @@ namespace WpfApp1.ViewModel
                     ;
                 this.sendTime = DateTime.Now;
 
+                if(this.timeoutTask != null)
+                {
+                    cancelTimeoutToken.Cancel();
+                    this.timeoutTask.Wait();
+                    cancelTimeoutToken.Dispose();
+                    cancelTimeoutToken = new CancellationTokenSource();
+                    this.timeoutTaskToken = cancelTimeoutToken.Token;
+                };
+                
                 this.timeoutTask = Task.Factory.StartNew(() =>
                 {
-                    while(true)
+                    while (true)
                     {
                         if (this.timeoutTaskToken.IsCancellationRequested)
                             return;
@@ -171,8 +188,15 @@ namespace WpfApp1.ViewModel
                             
                             this.IntPort.Read(responseBytes, 0, byteRecieved);
                             this.intbusRecievedBuffer.AddRange(responseBytes);
-
-                            this.SerialDataIntBUSResponse("CRC ERROR OR TIMEOUT");
+                            if (this.intbusRecievedBuffer.Count == 0)
+                            {
+                                this.SerialDataIntBUSResponse("TIMEOUT, NO RESPONSE");
+                            }
+                            else
+                            {
+                                this.SerialDataIntBUSResponse("TIMEOUT, CRC ERROR");
+                            }
+                            
                             return;
                         }
                     }
@@ -190,25 +214,22 @@ namespace WpfApp1.ViewModel
             List<byte> preambule = currentDevice.CalculatePreambule();
             string strPreambule = BitConverter.ToString(preambule.ToArray()).Replace('-', ' ');
 
-            
+            string message = BitConverter.ToString(this.intbusRecievedBuffer.ToArray()).Replace('-', ' ');
 
             if (this.MbPort != null && this.MbPort.IsOpen)
             {
+                //Подмена модбас адреса для скады(исходного модбас мастера)
+                if(this.intbusRecievedBuffer.Count > preambule.Count())
+                    this.intbusRecievedBuffer[preambule.Count()] = (byte)this.currentDevice.VirtualModbusAddress;
                 this.MbPort.Write(this.intbusRecievedBuffer.ToArray(), 0, this.intbusRecievedBuffer.Count);
             }
-            string message = BitConverter.ToString(this.intbusRecievedBuffer.Skip(preambule.Count).ToArray()).Replace('-', ' ');
+            
             this.WriteLog($"{this.currentDevice.Name}  RX: [{strPreambule}] {message} {addingMessage}");
 
             this.intbusRecievedBuffer.Clear();
         }
 
-        bool IsValidCrc(IEnumerable<byte> buffer)
-        {
-            byte[] actualCrc = buffer.Skip(intbusRecievedBuffer.Count - 2).ToArray();
-            byte[] expectedCrc = ModbusUtility.CalculateCrc(buffer.Take(intbusRecievedBuffer.Count - 2).ToArray());
-
-            return actualCrc[0] == expectedCrc[0] && actualCrc[1] == expectedCrc[1];
-        }
+        
 
         private SerialPort InitPort(JToken jPort)
         {
@@ -242,6 +263,12 @@ namespace WpfApp1.ViewModel
         public void WriteLog(string log)
         {
             this.Log += $"{DateTime.Now.TimeOfDay}: {log}\n";
+        }
+
+        public void Dispose()
+        {
+            this.MbPort.DataReceived -= MbPort_DataReceived;
+            this.IntPort.DataReceived -= IntPort_DataReceived;
         }
 
         public SerialPort IntPort { get; set; }

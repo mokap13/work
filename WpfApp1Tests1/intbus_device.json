@@ -1,0 +1,50 @@
+{
+    "intbusComPort": {
+        "port": "COM3",
+        "baudRate": 19200,
+        "even": "None",
+        "bits": 8,
+        "stopBit": 1
+    },
+    "modbusComPort": {
+        "port": "COM7",
+        "baudRate": 19200,
+        "even": "None",
+        "bits": 8,
+        "stopBit": 1
+    },
+    "intbusDevices": [
+        {
+            "name": "O-Modem",
+            "interface": "FM",
+            "intbusAddress": 1,
+            "modbusAddress": 6,
+            "virtualModbusAddress": 2,
+            "intbusDevices": [
+                {
+                    "name": "Valve",
+                    "interface": "UART",
+                    "intbusAddress": 1,
+                    "modbusAddress": 7,
+                    "virtualModbusAddress": 1
+                }
+            ]
+        },
+        {
+            "name": "Д",
+            "interface": "UART",
+            "intbusAddress": 1,
+            "modbusAddress": 8,
+            "virtualModbusAddress": 3,
+            "intbusDevices": [
+                {
+                    "name": "А",
+                    "interface": "OWI",
+                    "intbusAddress": 1,
+                    "modbusAddress": 9,
+                    "virtualModbusAddress": 4
+                }
+            ]
+        }
+    ]
+}

@@ -17,18 +17,16 @@ namespace WpfApp1.Model.Tests
 
         public IntbusDeviceTests()
         {
-            List<IntbusDevice> devices = CreateDevices();
+            CreateDevices();
         }
-        List<IntbusDevice> CreateDevices()
+        private void CreateDevices()
         {
-            JObject jObj = JObject.Parse(File.ReadAllText(@"./intbus_device.json"));
-            intbusDevices = jObj["intbusDevice"].ToObject<List<IntbusDevice>>();
+            JObject jObj = JObject.Parse(File.ReadAllText(@"../../intbus_device.json"));
+            intbusDevices = jObj["intbusDevices"].ToObject<List<IntbusDevice>>();
             intbusDevices.ForEach(d => d.InitializeParents());
 
             foreach (IntbusDevice device in intbusDevices)
                 device.InitializeAddress(ref modbusAddressDictionary);
-
-            return intbusDevices;
         }
 
         [TestMethod()]
@@ -38,7 +36,7 @@ namespace WpfApp1.Model.Tests
             //41 21 01 03 00 00 00 01 70 EF
 
             List<byte> mbFrame = new List<byte> { 0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x84, 0x0A };
-            List<byte> expected = new List<byte> { 0x41, 0x21, 0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x30, 0xE4 };
+            List<byte> expected = new List<byte> { 0x41, 0x21, 0x07, 0x03, 0x00, 0x00, 0x00, 0x01, 0x30, 0x82 };
 
             List<byte> actual = modbusAddressDictionary[mbFrame.First()].ConvertToIntbus(mbFrame);
 
@@ -46,24 +44,38 @@ namespace WpfApp1.Model.Tests
         }
 
         [TestMethod()]
-        public void CalculateFrameTest2()
+        public void CalculateFrameTest3()
         {
             List<byte> mbFrame = new List<byte>
             {
-                0x02,0x04,0x02,0x12,0x34,
-                0xB4, 0x47
+                0x04, 0x04, 0x00, 0x05, 0x00, 0x01, 0x21, 0x9E,
             };
             List<byte> expected = new List<byte>
             {
-                0x21,0xA1,
-                0x01,0x04,0x02,0x12,0x34,
-                0xA3, 0x34
+                0x21, 0xA1, 0x09, 0x04, 0x00, 0x05, 0x00, 0x01, 0x13, 0x8D,
             };
 
             List<byte> actual = modbusAddressDictionary[mbFrame.First()].ConvertToIntbus(mbFrame);
 
             CollectionAssert.AreEqual(expected, actual);
         }
-        
+
+        [TestMethod()]
+        public void CalculateFrameTest4()
+        {
+            List<byte> mbFrame = new List<byte>
+            {
+                0x03, 0x04, 0x00, 0x05, 0x00, 0x01, 0x21, 0x9E,
+            };
+            List<byte> expected = new List<byte>
+            {
+                0x21, 0x08, 0x04, 0x00, 0x05, 0x00, 0x01, 0x0B, 0x4B,
+            };
+
+            List<byte> actual = modbusAddressDictionary[mbFrame.First()].ConvertToIntbus(mbFrame);
+
+            CollectionAssert.AreEqual(expected, actual);
+        }
+
     }
 }

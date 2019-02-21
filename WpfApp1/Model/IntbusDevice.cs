@@ -25,7 +25,7 @@ namespace WpfApp1.Model
 
         private IntbusDevice parentDevice;
 
-        private byte PreambuleByte => (byte)(this.Address | (interfaceCodeDictionary[this.Interface] << 5));
+        private byte PreambuleByte => (byte)(this.IntbusAddress | (interfaceCodeDictionary[this.Interface] << 5));
 
         [JsonConverter(typeof(StringEnumConverter))]
         [JsonProperty("interface")]
@@ -36,14 +36,18 @@ namespace WpfApp1.Model
         [JsonProperty("name")]
         public string Name { get; set; }
 
-        [JsonProperty("address")]
+        [JsonProperty("intbusAddress")]
         [JsonRequired]
-        public int Address { get; private set; }
+        public int IntbusAddress { get; private set; }
 
         [JsonProperty("modbusAddress")]
-        public int? ModbusAddress { get; private set; }
+        [JsonRequired]
+        public int ModbusAddress { get; private set; }
 
-        [JsonProperty("intbusDevice")]
+        [JsonProperty("virtualModbusAddress")]
+        public int? VirtualModbusAddress { get; private set; }
+
+        [JsonProperty("intbusDevices")]
         public List<IntbusDevice> Devices { get; private set; }
 
         public void InitializeParents()
@@ -60,13 +64,13 @@ namespace WpfApp1.Model
 
         public void InitializeAddress(ref Dictionary<int, IntbusDevice> addressDeviceDictionary)
         {
-            if(this.ModbusAddress != null)
+            if(this.VirtualModbusAddress != null)
             {
-                if (addressDeviceDictionary.ContainsKey((int)this.ModbusAddress))
+                if (addressDeviceDictionary.ContainsKey((int)this.VirtualModbusAddress))
                     throw new Exception($"{this.Name} and " +
-                        $"{addressDeviceDictionary[(int)this.ModbusAddress].Name}: " +
-                        $"equal modbus address :{this.ModbusAddress} ");
-                addressDeviceDictionary.Add((int)this.ModbusAddress, this);
+                        $"{addressDeviceDictionary[(int)this.VirtualModbusAddress].Name}: " +
+                        $"equal modbus address :{this.VirtualModbusAddress} ");
+                addressDeviceDictionary.Add((int)this.VirtualModbusAddress, this);
             }
 
             if (this.Devices != null)
@@ -89,11 +93,11 @@ namespace WpfApp1.Model
 
         public List<byte> ConvertToIntbus(List<byte> modbusFrame)
         {
-            if (modbusFrame.First() != this.ModbusAddress)
-                throw new ArgumentException($"{this.Name} mbAddr:{this.ModbusAddress} адрес устройства не соответствует адресу в словаре");
+            if (modbusFrame.First() != this.VirtualModbusAddress)
+                throw new ArgumentException($"{this.Name} mbAddr:{this.VirtualModbusAddress} адрес устройства не соответствует адресу в словаре");
 
             List<byte> preambule = this.CalculatePreambule();
-
+            modbusFrame[0] = (byte)this.ModbusAddress;
             modbusFrame.InsertRange(0, preambule);
             modbusFrame.RemoveRange(modbusFrame.Count - 2, 2);
             byte[] crc = ModbusUtility.CalculateCrc(modbusFrame.ToArray());
